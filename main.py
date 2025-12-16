@@ -2,6 +2,10 @@ from universe.universe import create_nice_orbits_system, animate_universe
 from station.adapter import UniverseAdapter
 from station.space_station import SpaceStation, FILE_PATH
 from station.smart_room import SmartRoom
+from station.networking import StationServer, RoomNode
+
+# Expose the server so commands can be sent while the sim runs.
+network_server = None
 
 
 def build_station() -> SpaceStation:
@@ -16,6 +20,11 @@ def build_station() -> SpaceStation:
 
 
 def run_simulation(frames: int = 2000, dt: float = 0.01, steps_per_frame: int = 3):
+    # Networking setup (optional but enabled by default here)
+    global network_server
+    network_server = StationServer()
+    network_server.start()
+
     # 1) Build universe
     universe = create_nice_orbits_system()
 
@@ -25,12 +34,20 @@ def run_simulation(frames: int = 2000, dt: float = 0.01, steps_per_frame: int = 
     # 3) Build space station
     station = build_station()
 
+    # 4) Create a RoomNode per room to send status + receive commands
+    room_nodes = []
+    for room in station.rooms.values():
+        node = RoomNode(room)
+        node.connect()
+        room_nodes.append(node)
+
     print(f"Running animated simulation for {frames} frames, dt={dt}, steps_per_frame={steps_per_frame}...\n")
 
     animate_universe(
         universe,
         station=station,
         adapter=adapter,
+        room_nodes=room_nodes,
         dt=dt,
         steps_per_frame=steps_per_frame,
         frames=frames,

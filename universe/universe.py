@@ -279,6 +279,7 @@ def animate_universe(
     universe: Universe,
     station: Optional[SpaceStation] = None,
     adapter: Optional[UniverseAdapter] = None,
+    room_nodes=None,
     dt=0.01,
     steps_per_frame=3,
     frames=2000,
@@ -327,6 +328,9 @@ def animate_universe(
             # We already advanced the universe above, so only read its state.
             env = adapter.step(dt, advance_universe=False)
             station.step(env.external_temp, env.solar_flux, dt, env.t)
+            if room_nodes:
+                for node in room_nodes:
+                    node.send_status()
 
         # --- update body drawings ---
         for idx, (scatter, body) in enumerate(scatters):
